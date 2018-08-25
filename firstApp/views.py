@@ -9,3 +9,7 @@ from django.http import HttpResponse
 def hello(request):
     return HttpResponse('こんにちは')
 #add2018.08.19 end
+#add2018.08.25 start
+def card(request):
+    return render(request,'card.html')
+#add2018.08.25 end

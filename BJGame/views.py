@@ -67,9 +67,23 @@ def game(request):
                 "able_bet" : True,
                 "able_double" : True,
                 "money" : money,
-                "dealer_cards" : int(request.POST["bet"],
+                "bet" : int(request.POST["bet"],
             }
             dictionary.update(csrf(request))
-        
             return render(request,"bjgame.html",dictionary)
-    
+        else:
+            op = request.POST["operation"]
+            bet = r.get_redis(token,"bet")
+            doubled,ending = bj.player_op(deck,player_hands,op)
+            r.set_redis(token,"player_hands",player_hands)
+            r.set_redis(token,"deck",deck)
+            player_point = bj.get_point(player_hands)
+            print(player_hands)
+            
+            if doubled:
+            bet = r.get_redis(token,"bet")
+            money -= bet
+            bet *= 2
+            r.set_redis(token,"bet",bet)
+            r.set_redis(token,"money",money)
+        

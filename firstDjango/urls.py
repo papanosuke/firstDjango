@@ -15,12 +15,9 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.conf.urls import url
-#2018.08.19 add start
 from django.conf.urls import include
-#2018.08.19 add end
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-#2018.08.19 add start
     url(r'^firstApp/', include('firstApp.urls')),
-#2018.08.19 add end
+    url(r'^BJ/', include('BJGame.urls')),
 ]

@@ -27,7 +27,6 @@ def game(request):
             "player_point" : 0,
             "able_bet" : True,
             "money" : 100,
-            "dealer_cards" : [],
         }
         dictionary.update(csrf(request))
         
@@ -41,8 +40,10 @@ def game(request):
         dealer_hands = r.get_redis(token,"dealer_hands")
         
         if (r.get_redis(token,"game_now") == False):
-            r.set_redis(token,"game_now",True)
+            
+            r.set_redis(token,"game_now", True)
             money -= int(request.POST["bet"]
+            r.set_redis(token,"money",money)
             r.set_redis(token,"bet",int(request.POST["bet"]))
             dealer_hands = []
             dealer_hands.append(deck.pop())
@@ -81,9 +82,51 @@ def game(request):
             print(player_hands)
             
             if doubled:
-            bet = r.get_redis(token,"bet")
-            money -= bet
-            bet *= 2
-            r.set_redis(token,"bet",bet)
-            r.set_redis(token,"money",money)
-        
+                bet = r.get_redis(token,"bet")
+                money -= bet
+                bet *= 2
+                r.set_redis(token,"bet",bet)
+                r.set_redis(token,"money",money)
+            if ending:
+                dealer_hands.append(deck.pop())
+                bj.dealer_op(deck,player_hands,dealer_hands)
+                r.set_redis(token,"dealer_hands",dealer_hands)
+                dealer_point = bj.get_point(dealer_hands)
+                player_point = bj.get_point(player_hands)
+                msg,money = bj.win_lose(dealer_hands,player_hands,bet,money)
+                if money <= 0:
+                    return HttpResponse("GameOver")
+                r.set_redis(token,"money",money)
+                msg += "　ベットしてください。　"
+                
+                dictionary = {
+                    "msg" : msg,
+                    "dealer_cards" : dealer_hands,
+                    "dealer_point" : bj.get_point(dealer_hands),
+                    "player_cards" : player_hands,
+                    "player_point" : bj.get_point(player_hands),
+                    "able_bet" : True,
+                    "able_double" : True,
+                    "money" : money,
+                }
+                dictionary.update(csrf(request))
+                
+                deck = bj.make_deck()
+                r.set_redis(token,"deck",deck)
+                r.set_redis(token,"game_now",False)
+                
+                return render(request,"bjgame.html",dictionary)
+            else:
+                r.set_redis(token,"deck",deck)
+                
+                dictionary = {
+                    "dealer_cards" : dealer_hands,
+                    "dealer_point" : bj.get_point(dealer_hands),
+                    "player_cards" : player_hands,
+                    "player_point" : player_point,
+                    "able_bet" : False,
+                    "money" : money,
+                    "bet" : bet,
+                }
+                dictionary.update(csrf(request))
+                return render(request,"bjgame.html",dictionary)
